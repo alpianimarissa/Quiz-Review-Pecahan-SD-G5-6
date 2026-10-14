@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kuis Master Pecahan - Kelas 5 Kurikulum Merdeka</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Font: Poppins -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 50%, #bbf7d0 100%);
+            min-height: 100vh;
+        }
+        /* Styling khusus pecahan vertikal */
+        .frac {
+            display: inline-flex;
+            flex-direction: column;
+            vertical-align: middle;
+            text-align: center;
+            margin: 0 0.25rem;
+            font-size: 1.1em;
+            font-weight: 700;
+        }
+        .frac > span {
+            display: block;
+        }
+        .frac-num {
+            border-bottom: 2px solid currentColor;
+            padding: 0 4px 2px 4px;
+        }
+        .frac-den {
+            padding: 2px 4px 0 4px;
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased selection:bg-emerald-400 selection:text-slate-900">
+
+    <!-- Compact Header -->
+    <header class="bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 text-white shadow-sm sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 py-2 flex flex-col sm:flex-row justify-between items-center gap-2">
+            <div class="flex items-center space-x-2">
+                <span class="text-xl">🏆</span>
+                <div>
+                    <h1 class="text-sm md:text-base font-extrabold tracking-wide leading-tight">Kuis Master Pecahan Kelas 5</h1>
+                    <p class="text-[9px] text-emerald-100 font-medium">30 Soal • Kurikulum Merdeka • Tersimpan Otomatis</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-3 bg-emerald-950/30 px-3 py-1.5 rounded-lg backdrop-blur-md">
+                <span class="text-xs font-semibold">Skor: <span id="score-display" class="text-amber-300 font-bold">0</span>/30</span>
+                <button onclick="resetQuiz()" class="text-[10px] bg-rose-500 hover:bg-rose-600 text-white px-2 py-1 rounded font-bold transition">Reset Kuis</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-4 py-6">
+        <div class="grid md:grid-cols-4 gap-6">
+            
+            <!-- Question Card Area (3 cols on md) -->
+            <div class="md:col-span-3 space-y-6">
+                <div class="bg-white rounded-3xl p-6 md:p-8 shadow-xl border border-emerald-100 relative">
+                    <!-- Progress & Number -->
+                    <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-100">
+                        <span id="question-badge" class="px-3 py-1 bg-emerald-100 text-emerald-800 font-bold text-xs rounded-full">Soal 1 dari 30</span>
+                        <span id="category-badge" class="text-xs font-semibold text-slate-500">Operasi Pecahan</span>
+                    </div>
+
+                    <!-- Question Text -->
+                    <div id="question-text" class="text-base md:text-lg font-bold text-slate-900 mb-6 leading-relaxed">
+                        Memuat pertanyaan...
+                    </div>
+
+                    <!-- Options Grid -->
+                    <div id="options-container" class="grid grid-cols-1 gap-3 mb-6">
+                        <!-- Options generated dynamically -->
+                    </div>
+
+                    <!-- Explanation / Rationale Box -->
+                    <div id="explanation-box" class="hidden p-4 rounded-2xl bg-slate-50 border border-slate-200 text-sm mb-6">
+                        <p class="font-bold mb-1" id="explanation-title"></p>
+                        <p class="text-slate-600 text-xs leading-relaxed" id="explanation-text"></p>
+                    </div>
+
+                    <!-- Navigation Footer inside Card -->
+                    <div class="flex justify-between items-center pt-4 border-t border-slate-100">
+                        <button onclick="prevQuestion()" id="btn-prev" class="px-5 py-2 rounded-xl border border-slate-300 text-slate-600 font-bold text-xs hover:bg-slate-100 transition disabled:opacity-50">← Sebelumnya</button>
+                        <button onclick="nextQuestion()" id="btn-next" class="px-6 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-lg shadow-emerald-600/30 transition">Selanjutnya →</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Question Palette Sidebar (1 col on md) -->
+            <div class="space-y-4">
+                <div class="bg-white rounded-3xl p-5 shadow-xl border border-emerald-100">
+                    <h3 class="font-bold text-sm text-slate-800 mb-3 flex items-center justify-between">
+                        <span>Navigasi Soal</span>
+                        <span id="answered-count" class="text-xs text-emerald-600">0/30 Terisi</span>
+                    </h3>
+                    <div class="grid grid-cols-5 gap-2 max-h-[350px] overflow-y-auto p-1" id="palette-grid">
+                        <!-- Palette buttons generated dynamically -->
+                    </div>
+                </div>
+
+                <div class="bg-emerald-800 text-white rounded-3xl p-5 shadow-xl text-xs space-y-2">
+                    <p class="font-bold">💡 Tips Belajar:</p>
+                    <p class="text-emerald-100 leading-relaxed">Jawabanmu tersimpan otomatis di perangkat ini. Jika tidak sengaja tertutup atau ter-refresh, progresmu aman!</p>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        // 30 Unique Questions covering all subtopics
+        const quizData = [
+            // Pecahan dengan Bilangan Cacah (+, -, x, /)
+            {
+                id: 1,
+                category: "Pecahan & Bilangan Cacah",
+                question: "Berapakah hasil penjumlahan dari 3 + <span class='frac'><span class='frac-num'>2</span><span class='frac-den'>5</span></span> ?",
+                options: [
+                    { text: "3 <span class='frac'><span class='frac-num'>2</span><span class='frac-den'>5</span></span>", isCorrect: true, rationale: "Bilangan cacah 3 dijumlahkan dengan pecahan <span class='frac'><span class='frac-num'>2</span><span class='frac-den'>5</span></span> langsung menghasilkan pecahan campuran 3 <span class='frac'><span class='frac-num'>2</span><span class='frac-den'>5</span></span>." },
+                    { text: "3 <span class='frac'><span class='frac-num'>3</span><span class='frac-den'>5</span></span>", isCorrect: false, rationale: "Pembilang pecahan tetap 2, bukan 3." },
+                    { text: "<span class='frac'><span class='frac-num'>17</span><span class='frac-den'>5</span></span>", isCorrect: false, rationale: "Bentuk pecahan biasa dari 3 <span class='frac'><span class='frac-num'>2</span><span class='frac-den'>5</span></span> adalah <span class='frac'><span class='frac-num'>17</span><span class='frac-den'>5</span></span> (bukan salah jika dijadikan pecahan biasa, namun 3 <span class='frac'><span class='frac-num'>2</span><span class='frac-den'>5</span></span> adalah bentuk paling wajar)." },
+                    { text: "5 <span class='frac'><span class='frac-num'>2</span><span class='frac-den'>5</span></span>", isCorrect: false, rationale: "Bilangan cacah di depan adalah 3, bukan 5." }
+                ]
+            },
+            {
+                id: 2,
+                category: "Pecahan & Bilangan Cacah",
+                question: "Hitunglah pengurangan berikut: 4 - <span class='frac'><span class='frac-num'>3</span><span class='frac-den'>4</span></span> =",
+                options: [
+                    { text: "3 <span class='frac'><span class='frac-num'>1</span><span class='frac-den'>4</span></span>", isCorrect: true, rationale: "Ubah 4 menjadi 3 + <span class='frac'><span class='frac-num'>4</span><span class='frac-den'>4</span></span>. Kurangi <span class='frac'><span class='frac-num'>3</span><span class='frac-den'>4</span></span> menyisakan 3 <span class='frac'><span class='frac-num'>1</span><span class='frac-den'>4</span></span>." },
+                    { text: "3 <span class='frac'><span class='frac-num'>3</span><span class='frac-den'>4</span></span>", isCorrect: false, rationale: "Pecahan hasil pengurangan penyebut 4 dengan pembilang 3 adalah 1, bukan 3." },
+                    { text: "4 <span class='frac'><span class='frac-num'>1</span><span class='frac-den'>4</span></span>", isCorrect: false, rationale: "Nilai berkurang, sehingga bilangan bulat menjadi 3, bukan tetap 4." },
+                    { text: "<span class='frac'><span class='frac-num'>13</span><span class='frac-den'>4</span></span>", isCorrect: false, rationale: "Pecahan biasa dari hasil yang benar adalah <span class='frac'><span class='frac-num'>13</span><span class='frac-den'>4</span></span>." }
+                ]
+            },
+            {
+                id: 3,
+                category: "Pecahan & Bilangan Cacah",
+                question: "Berapakah hasil perkalian dari 5 × <span class='frac'><span class='frac-num'>3</span><span class='frac-den'>8</span></span> ?",
+                options: [
+                    { text: "1 <span class='frac'><span class='frac-num'>7</span><span class='frac-den'>8</span></span>", isCorrect: true, rationale: "Kalikan bilangan cacah 5 dengan pembilang 3, penyebut tetap 8 menjadi <span class='frac'><span class='frac-num'>15</span><span class='frac-den'>8</span></span> atau disederhanakan menjadi 1 <span class='frac'><span class='frac-num'>7</span><span class='frac-den'>8</span></span>." },
+                    { text: "<span class='frac'><span class='frac-num'>15</span><span class='frac-den'>40</span></span>", isCorrect: false, rationale: "Penyebut tidak boleh ikut dikalikan dengan bilangan cacah." },
+                    { text: "<span class='frac'><span class='frac-num'>8</span><span class='frac-den'>8</span></span>", isCorrect: false, rationale: "Bilangan cacah dikalikan pembilang, bukan dijumlahkan." },
+                    { text: "5 <span class='frac'><span class='frac-num'>3</span><span class='frac-den'>8</span></span>", isCorrect: false, rationale: "Ini adalah hasil penjumlahan, bukan perkalian." }
+                ]
+            },
+            {
+                id: 4,
+                category: "Pecahan & Bilangan Cacah",
+                question: "Hitunglah pembagian berikut: 2 ÷ <span class='frac'><span class='frac-num'>1</span><span class='frac-den'>4</span></span> =",
+                options: [
+                    { text: "8", isCorrect: true, rationale: "Gunakan metode perkalian kebalikan: 2 × <span class='frac'><span class='frac-num'>4</span><span class='frac-den'>1</span></span> = 8." },
+                    { text: "<span class='frac'><span class='frac-num'>1</span><span class='frac-den'>2</span></span>", isCorrect: false, rationale: "Ini adalah kebalikan dari pembagian yang diminta (<span class='frac'><span class='frac-num'>1</span><span class='frac-den'>2</span></span> ÷ 4)." },
+                    { text: "2 <span class='frac'><span class='frac-num'>1</span><span class='frac-den'>4</span></span>", isCorrect: false, rationale: "Pembagian bilangan cacah dengan pecahan menghasilkan nilai yang lebih besar." },
+                    { text: "6", isCorrect: false, rationale: "Perhitungan salah dalam mengalikan pembilang." }
+                ]
+            },
+            {
+                id: 5,
+                category: "Pecahan & Bilangan Cacah",
+                question: "Berapakah hasil dari <span class='frac'><span class='frac-num'>3</span><span class='frac-den'>4</span></span> ÷ 3 ?",
+                options: [
+                    { text: "<span class='frac'><span class='frac-num'>1</span><span class='frac-den'>4</span></span>", isCorrect: true, rationale: "Penyebut dikalikan bilangan cacah atau pembilang dibagi 3: <span class='frac'><span class='frac-num'>3</span><span class='frac-den'>12</span></span> disederhanakan menjadi <span class='frac'><span class='frac-num'>1</span><span class='frac-den'>4</span></span>." },
+                    { text: "<span class='frac'><span class='frac-num'>9</span><span class='frac-den'>4</span></span>", isCorrect: false, rationale: "Ini hasil dari perkalian dengan 3." },
+                    { text: "1", isCorrect: false, rationale: "Nilai pecahan dibagi 3 menjadi lebih kecil." },
+                    { text: "<span class='frac'><span class='frac-num'>3</span><span class='frac-den'>12</span></span>", isCorrect: false, rationale: "Belum disederhanakan ke bentuk paling sederhana." }
+                ]
+            },
+
+            // Pecahan Biasa dengan Pecahan Biasa (+, -, x, /)
+            {
+                id: 6,
+                category: "Pecahan Biasa",
+                question: "Hitunglah hasil dari <span class='frac'><span class='frac-num'>1</span><span class='frac-den'>2</span></span> + <span class='frac'><span class='frac-num'>1</span><span class='frac-den'>3</span></span> =",
+                options: [
+                    { text: "<span class='frac'><span class='frac-num'>5</span><span class='frac-den'>6</span></span>", isCorrect: true, rationale: "Samakan penyebut menjadi 6 (<span class='frac'><span class='frac-num'>3</span><span class='frac-den'>6</span></span> + <span class='frac'><span class='frac-num'>2</span><span class='frac-den'>6</span></span> = <span class='frac'><span class='frac-num'>5</span><span class='frac-den'>6</span></span>)." },
+                    { text: "<span class='frac'><span class='frac-num'>2</span><span class='frac-den'>5</span></span>", isCorrect: false, rationale: "Penyebut dijumlahkan langsung (kesalahan umum)." },
+                    { text: "<span class='frac'><span class='frac-num'>2</span><span class='frac-den'>6</span></span>", isCorrect: false, rationale: "Pembilang tidak boleh dijumlahkan langsung tanpa menyamakan penyebut." },
+                    { text: "<span class='frac'><span class='frac-num'>1</span><span class='frac-den'>6</span></span>", isCorrect: false, rationale: "Hasil pengurangan, bukan penjumlahan." }
+                ]
+            },
+            {
+                id: 7,
+                category: "Pecahan Biasa",
+                question: "Berapakah hasil dari <span class='frac'><span class='frac-num'>3</span><span class='frac-den'>4</span></span> - <span class='frac'><span class='frac-num'>1</span><span class='frac-den'>6</span></span> =",
+                options: [
+                    { text: "<span class='frac'><span class='frac-num'>7</span><span class='frac-den'>12</span></span>", isCorrect: true, rationale: "KPK dari 4 dan 6 adalah 12. (<span class='frac'><span class='frac-num'>9</span><span class='frac-den'>12</span></span> - <span class='frac'><span class='frac-num'>2</span><span class='frac-den'>12</span></span> = <span class='frac'><span class='frac-num'>7</span><span class='frac-den'>12</span></span>)." },
+                    { text: "<span class='frac'><span class='frac-num'>2</span><span class='frac-den'>2</span></span>", isCorrect: false, rationale: "Pengurangan pembilang dan penyebut langsung adalah salah." },
+                    { text: "<span class='frac'><span class='frac-num'>5</span><span class='frac-den'>12</span></span>", isCorrect: false, rationale: "Perhitungan pembilang kurang tepat (<span class='frac'><span class='frac-num'>9</span><span class='frac-den'>12</span></span> - <span class='frac'><span class='frac-num'>2</span><span class='frac-den'>12</span></span> = 7)." },
+                    { text: "<span class='frac'><span class='frac-num'>1</span><span class='frac-den'>2</span></span>", isCorrect: false, rationale: "Hasil estimasi yang tidak akurat." }
+                ]
+            },
+            {
+                id: 8,
+                category: "Pecahan Biasa",
+                question: "Hitunglah hasil perkalian <span class='frac'><span class='frac-num'>2</span><span class='frac-den'>3</span></span> × <span class='frac'><span class='frac-num'>3</span><span class='frac-den'>5</span></span> =",
+                options: [
+                    { text: "<span class='frac'><span class='frac-num'>2</span><span class='frac-den'>5</span></span>", isCorrect: true, rationale: "Pembilang dikali pembilang (2×3=6), penyebut dikali penyebut (3×5=15), disederhanakan menjadi <span class='frac'><span class='frac-num'>2</span><span class='frac-den'>5</span></span>." },
+                    { text: "<span class='frac'><span class='frac-num'>5</span><span class='frac-den'>8</span></span>", isCorrect: false, rationale: "Operasi perkalian pecahan tidak menjumlahkan angka." },
+                    { text: "<span class='frac'><span class='frac-num'>5</span><span class='frac-den'>15</span></span>", isCorrect: false, rationale: "Pembilang dijumlahkan alih-alih dikalikan." },
+                    { text: "<span class='frac'><span class='frac-num'>6</span><span class='frac-den'>8</span></span>", isCorrect: false, rationale: "Penyebut dijumlahkan bukannya dikalikan." }
+                ]
+            },
+            {
+                id: 9,
+                category: "Pecahan Biasa",
+                question: "Berapakah hasil pembagian <span class='frac'><span class='frac-num'>3</span><span class='frac-den'>4</span></span> ÷ <span class='frac'><span class='frac-num'>1</span><span class='frac-den'>2</span></span> =",
+                options: [
+                    { text: "1 <span class='frac'><span class='frac-num'>1</span><span class='frac-den'>2</span></span>", isCorrect: true, rationale: "Metode KFC: <span class='frac'><span class='frac-num'>3</span><span class='frac-den'>4</span></span> × <span class='frac'><span class='frac-num'>2</span><span class='frac-den'>1</span></span> = <span class='frac'><span class='frac-num'>6</span><span class='frac-den'>4</span></span> disederhanakan menjadi 1 <span class='frac'><span class='frac-num'>1</span><span class='frac-den'>2</span></span>." },
+                    { text: "<span class='frac'><span class='frac-num'>3</span><span class='frac-den'>8</span></span>", isCorrect: false, rationale: "Ini adalah hasil perkalian, bukan pembagian." },
+                    { text: "<span class='frac'><span class='frac-num'>4</span><span class='frac-den'>6</span></span>", isCorrect: false, rationale: "Kebalikan pecahan pembagi belum dikalikan dengan benar." },
+                    { text: "<span class='frac'><span class='frac-num'>2</span><span class='frac-den'>2</span></span>", isCorrect: false, rationale: "Perhitungan salah." }
+                ]
+            },
+            {
+                id: 10,
+                category: "Pecahan Biasa",
+                question: "Hitunglah pembagian dengan penyebut sama berikut: <span class='frac'><span class='frac-num'>4</span><span class='frac-den'>7</span></span> ÷ <span class='frac'><span class='frac-num'>2</span><span class='frac-den'>7</span></span> =",
+                options: [
+                    { text: "2", isCorrect: true, rationale: "Karena penyebut sudah sama (7), langsung bagi pembilangnya: 4 ÷ 2 = 2." },
+                    { text: "<span class='frac'><span class='frac-num'>8</span><span class='frac-den'>49</span></span>", isCorrect: false, rationale: "Ini adalah hasil perkalian silang yang keliru." },
+                    { text: "<span class='frac'><span class='frac-num'>2</span><span class='frac-den'>7</span></span>", isCorrect: false, rationale: "Pembagian pembilang menghasilkan 2, bukan pecahan 2 per 7." },
+                    { text: "1", isCorrect: false, rationale: "Perhitungan salah." }
+                ]
+            },
+            {
+                id: 11,
+                category: "Pecahan Biasa",
+                question: "Hitunglah hasil dari <span class='frac'><span class='frac-num'>4</span><span class='frac-den'>5</span></span> - <span class='frac'><span class='frac-num'>2</span><span class='frac-den'>3</span></span> =",
+                options: [
+                    { text: "<span class='frac'><span class='frac-num'>2</span><span class='frac-den'>15</span></span>", isCorrect: true, rationale: "Samakan penyebut ke 15: (<span class='frac'><span class='frac-num'>12</span><span class='frac-den'>15</span></span> - <span class='frac'><span class='frac-num'>10</span><span class='frac-den'>15</span></span> = <span class='frac'><span class='frac-num'>2</span><span class='frac-den'>15</span></span>)." },
+                    { text: "<span class='frac'><span class='frac-num'>2</span><span class='frac-den'>2</span></span>", isCorrect: false, rationale: "Pengurangan langsung pembilang dan penyebut adalah keliru." },
+                    { text: "<span class='frac'><span class='frac-num'>6</span><span class='frac-den'>15</span></span>", isCorrect: false, rationale: "Kesalahan dalam menghitung selisih pembilang." },
+                    { text: "<span class='frac'><span class='frac-num'>1</span><span class='frac-den'>5</span></span>", isCorrect: false, rationale: "Kurang tepat dalam penyamaan penyebut." }
+                ]
+            },
+            {
+                id: 12,
+                category: "Pecahan Biasa",
+                question: "Berapakah hasil dari <span class='frac'><span class='frac-num'>5</span><span class='frac-den'>6</span></span> × <span class='frac'><span class='frac-num'>3</span><span class='frac-den'>10</span></span> =",
+                options: [
+                    { text: "<span class='frac'><span class='frac-num'>1</span><span class='frac-den'>4</span></span>", isCorrect: true, rationale: "<span class='frac'><span class='frac-num'>15</span><span class='frac-den'>60</span></span> jika disederhanakan dengan dibagi 15 menjadi <span class='frac'><span class='frac-num'>1</span><span class='frac-den'>4</span></span>." },
+                    { text: "<span class='frac'><span class='frac-num'>15</span><span class='frac-den'>16</span></span>", isCorrect: false, rationale: "Penyebut dijumlahkan alih-alih dikalikan." },
+                    { text: "<span class='frac'><span class='frac-num'>8</span><span class='frac-den'>16</span></span>", isCorrect: false, rationale: "Operasi pencampuran penjumlahan dan perkalian." },
+                    { text: "<span class='frac'><span class='frac-num'>1</span><span class='frac-den'>2</span></span>", isCorrect: false, rationale: "Belum disederhanakan dengan benar." }
+                ]
+            },
+            {
+                id: 13,
+                category: "Pecahan Biasa",
+                question: "Hitunglah <span class='frac'><span class='frac-num'>2</span><span class='frac-den'>7</span></span> + <span class='frac'><span class='frac-num'>3</span><span class='frac-den'>14</span></span> =",
+                options: [
+                    { text: "<span class='frac'><span class='frac-num'>1</span><span class='frac-den'>2</span></span>", isCorrect: true, rationale: "Ubah <span class='frac'><span class='frac-num'>2</span><span class='frac-den'>7</span></span> menjadi <span class='frac'><span class='frac-num'>4</span><span class='frac-den'>14</span></span>. Lalu <span class='frac'><span class='frac-num'>4</span><span class='frac-den'>14</span></span> + <span class='frac'><span class='frac-num'>3</span><span class='frac-den'>14</span></span> = <span class='frac'><span class='frac-num'>7</span><span class='frac-den'>14</span></span> disederhanakan menjadi <span class='frac'><span class='frac-num'>1</span><span class='frac-den'>2</span></span>." },
+                    { text: "<span class='frac'><span class='frac-num'>5</span><span class='frac-den'>14</span></span>", isCorrect: false, rationale: "Pecahan pertama belum dikalikan 2 penyebutnya." },
+                    { text: "<span class='frac'><span class='frac-num'>5</span><span class='frac-den'>21</span></span>", isCorrect: false, rationale: "Penyebut dijumlahkan langsung." },
+                    { text: "<span class='frac'><span class='frac-num'>6</span><span class='frac-den'>14</span></span>", isCorrect: false, rationale: "Kesalahan hitung pembilang." }
+                ]
+            },
+            {
+                id: 14,
+                category: "Pecahan Biasa",
+                question: "Berapa hasil dari <span class='frac'><span class='frac-num'>7</span><span class='frac-den'>10</span></span> ÷ <span class='frac'><span class='frac-num'>2</span><span class='frac-den'>5</span></span> ?",
+                options: [
+                    { text: "1 <span class='frac'><span class='frac-num'>3</span><span class='frac-den'>4</span></span>", isCorrect: true, rationale: "Metode KFC: <span class='frac'><span class='frac-num'>7</span><span class='frac-den'>10</span></span> × <span class='frac'><span class='frac-num'>5</span><span class='frac-den'>2</span></span> = <span class='frac'><span class='frac-num'>35</span><span class='frac-den'>20</span></span> disederhanakan menjadi 1 <span class='frac'><span class='frac-num'>3</span><span class='frac-den'>4</span></span>." },
+                    { text: "<span class='frac'><span class='frac-num'>14</span><span class='frac-den'>50</span></span>", isCorrect: false, rationale: "Ini adalah hasil perkalian langsung tanpa dibalik." },
+                    { text: "<span class='frac'><span class='frac-num'>5</span><span class='frac-den'>5</span></span>", isCorrect: false, rationale: "Pembagian pecahan tidak dikurangkan." },
+                    { text: "<span class='frac'><span class='frac-num'>9</span><span class='frac-den'>15</span></span>", isCorrect: false, rationale: "Operasi salah total." }
+                ]
+            },
+            {
+                id: 15,
+                category: "Pecahan Biasa",
+                question: "Hitunglah <span class='frac'><span class='frac-num'>1</span><span class='frac-den'>3</span></span> × <span class='frac'><span class='frac-num'>3</span><span class='frac-den'>4</span></span> × <span class='frac'><span class='frac-num'>4</span><span class='frac-den'>5</span></span> =",
+                options: [
+                    { text: "<span class='frac'><span class='frac-num'>1</span><span class='frac-den'>5</span></span>", isCorrect: true, rationale: "Coret angka yang sama di atas dan bawah (pembilang & penyebut saling membagi), menyisakan <span class='frac'><span class='frac-num'>1</span><span class='frac-den'>5</span></span>." },
+                    { text: "<span class='frac'><span class='frac-num'>12</span><span class='frac-den'>60</span></span>", isCorrect: false, rationale: "Belum disederhanakan, meskipun nilainya benar." },
+                    { text: "<span class='frac'><span class='frac-num'>8</span><span class='frac-den'>12</span></span>", isCorrect: false, rationale: "Perhitungan salah." },
+                    { text: "<span class='frac'><span class='frac-num'>3</span><span class='frac-den'>5</span></span>", isCorrect: false, rationale: "Kurang tepat dalam mencoret faktor." }
+                ]
+            },
+
+            // Pecahan Campuran dengan Pecahan Campuran (+, -, x, /)
+            {
+                id: 16,
+                category: "Pecahan Campuran",
+                question: "Hitunglah 1<span class='frac'><span class='frac-num'>1</span><span class='frac-den'>2</span></span> + 2<span class='frac'><span class='frac-num'>1</span><span class='frac-den'>4</span></span> =",
+                options: [
+                    { text: "3 <span class='frac'><span class='frac-num'>3</span><span class='frac-den'>4</span></span>", isCorrect: true, rationale: "Jumlahkan bilangan bulat (1+2=3), lalu pecahan (<span class='frac'><span class='frac-num'>2</span><span class='frac-den'>4</span></span> + <span class='frac'><span class='frac-num'>1</span><span class='frac-den'>4</span></span> = <span class='frac'><span class='frac-num'>3</span><span class='frac-den'>4</span></span>). Hasilnya 3 <span class='frac'><span class='frac-num'>3</span><span class='frac-den'>4</span></span>." },
+                    { text: "3 <span class='frac'><span class='frac-num'>2</span><span class='frac-den'>6</span></span>", isCorrect: false, rationale: "Penyebut dijumlahkan langsung." },
+                    { text: "4 <span class='frac'><span class='frac-num'>1</span><span class='frac-den'>4</span></span>", isCorrect: false, rationale: "Kesalahan dalam menjumlahkan bilangan bulat." },
+                    { text: "<span class='frac'><span class='frac-num'>15</span><span class='frac-den'>4</span></span>", isCorrect: false, rationale: "Bentuk pecahan biasa yang tidak diminta dalam opsi utama." }
+                ]
+            },
+            {
+                id: 17,
+                category: "Pecahan Campuran",
+                question: "Berapakah hasil dari 3<span class='frac'><span class='frac-num'>3</span><span class='frac-den'>4</span></span> - 1<span class='frac'><span class='frac-num'>1</span><span class='frac-den'>2</span></span> =",
+                options: [
+                    { text: "2 <span class='frac'><span class='frac-num'>1</span><span class='frac-den'>4</span></span>", isCorrect: true, rationale: "Bulat: 3-1=2. Pecahan: <span class='frac'><span class='frac-num'>3</span><span class='frac-den'>4</span></span> - <span class='frac'><span class='frac-num'>2</span><span class='frac-den'>4</span></span> = <span class='frac'><span class='frac-num'>1</span><span class='frac-den'>4</span></span>. Hasil: 2 <span class='frac'><span class='frac-num'>1</span><span class='frac-den'>4</span></span>." },
+                    { text: "2 <span class='frac'><span class='frac-num'>2</span><span class='frac-den'>2</span></span>", isCorrect: false, rationale: "Penyebut disamakan salah." },
+                    { text: "1 <span class='frac'><span class='frac-num'>3</span><span class='frac-den'>4</span></span>", isCorrect: false, rationale: "Pengurangan bilangan bulat keliru." },
+                    { text: "2 <span class='frac'><span class='frac-num'>1</span><span class='frac-den'>2</span></span>", isCorrect: false, rationale: "Selisih pecahan kurang tepat." }
+                ]
+            },
+            {
+                id: 18,
+                category: "Pecahan Campuran",
+                question: "Hitunglah perkalian berikut: 1<span class='frac'><span class='frac-num'>1</span><span class='frac-den'>2</span></span> × 2<span class='frac'><span class='frac-num'>1</span><span class='frac-den'>3</span></span> =",
+                options: [
+                    { text: "3 <span class='frac'><span class='frac-num'>1</span><span class='frac-den'>2</span></span>", isCorrect: true, rationale: "Ubah ke pecahan biasa dulu: <span class='frac'><span class='frac-num'>3</span><span class='frac-den'>2</span></span> × <span class='frac'><span class='frac-num'>7</span><span class='frac-den'>3</span></span> = <span class='frac'><span class='frac-num'>21</span><span class='frac-den'>6</span></span> = <span class='frac'><span class='frac-num'>7</span><span class='frac-den'>2</span></span> = 3 <span class='frac'><span class='frac-num'>1</span><span class='frac-den'>2</span></span>." },
+                    { text: "2 <span class='frac'><span class='frac-num'>1</span><span class='frac-den'>6</span></span>", isCorrect: false, rationale: "Bilangan bulat dikali bulat, pecahan dikali pecahan (salah cara)." },
+                    { text: "<span class='frac'><span class='frac-num'>15</span><span class='frac-den'>6</span></span>", isCorrect: false, rationale: "Perhitungan pembilang salah." },
+                    { text: "3 <span class='frac'><span class='frac-num'>1</span><span class='frac-den'>4</span></span>", isCorrect: false, rationale: "Hasil estimasi keliru." }
+                ]
+            },
+            {
+                id: 19,
+                category: "Pecahan Campuran",
+                question: "Berapakah hasil pembagian 2<span class='frac'><span class='frac-num'>1</span><span class='frac-den'>2</span></span> ÷ 1<span class='frac'><span class='frac-num'>1</span><span class='frac-den'>4</span></span> =",
+                options: [
+                    { text: "2", isCorrect: true, rationale: "Ubah ke pecahan biasa: <span class='frac'><span class='frac-num'>5</span><span class='frac-den'>2</span></span> ÷ <span class='frac'><span class='frac-num'>5</span><span class='frac-den'>4</span></span> = <span class='frac'><span class='frac-num'>5</span><span class='frac-den'>2</span></span> × <span class='frac'><span class='frac-num'>4</span><span class='frac-den'>5</span></span> = <span class='frac'><span class='frac-num'>20</span><span class='frac-den'>10</span></span> = 2." },
+                    { text: "1 <span class='frac'><span class='frac-num'>1</span><span class='frac-den'>2</span></span>", isCorrect: false, rationale: "Pembagian bilangan bulat salah." },
+                    { text: "<span class='frac'><span class='frac-num'>25</span><span class='frac-den'>8</span></span>", isCorrect: false, rationale: "Ini hasil perkalian bukan pembagian." },
+                    { text: "4", isCorrect: false, rationale: "Terlalu besar." }
+                ]
+            },
+            {
+                id: 20,
+                category: "Pecahan Campuran",
+                question: "Hitunglah 2<span class='frac'><span class='frac-num'>2</span><span class='frac-den'>3</span></span> + 1<span class='frac'><span class='frac-num'>3</span><span class='frac-den'>4</span></span> =",
+                options: [
+                    { text: "4 <span class='frac'><span class='frac-num'>5</span><span class='frac-den'>12</span></span>", isCorrect: true, rationale: "Bulat: 2+1=3. Pecahan: <span class='frac'><span class='frac-num'>8</span><span class='frac-den'>12</span></span> + <span class='frac'><span class='frac-num'>9</span><span class='frac-den'>12</span></span> = <span class='frac'><span class='frac-num'>17</span><span class='frac-den'>12</span></span> (1 <span class='frac'><span class='frac-num'>5</span><span class='frac-den'>12</span></span>). Total: 3 + 1 <span class='frac'><span class='frac-num'>5</span><span class='frac-den'>12</span></span> = 4 <span class='frac'><span class='frac-num'>5</span><span class='frac-den'>12</span></span>." },
+                    { text: "3 <span class='frac'><span class='frac-num'>5</span><span class='frac-den'>7</span></span>", isCorrect: false, rationale: "Penyebut dijumlahkan langsung." },
+                    { text: "4 <span class='frac'><span class='frac-num'>1</span><span class='frac-den'>12</span></span>", isCorrect: false, rationale: "Kesalahan penjumlahan pembilang." },
+                    { text: "3 <span class='frac'><span class='frac-num'>17</span><span class='frac-den'>12</span></span>", isCorrect: false, rationale: "Pecahan belum diubah menjadi pecahan campuran." }
+                ]
+            },
+            {
+                id: 21,
+                category: "Pecahan Campuran",
+                question: "Hitunglah 4<span class='frac'><span class='frac-num'>1</span><span class='frac-den'>5</span></span> - 2<span class='frac'><span class='frac-num'>3</span><span class='frac-den'>5</span></span> =",
+                options: [
+                    { text: "1 <span class='frac'><span class='frac-num'>3</span><span class='frac-den'>5</span></span>", isCorrect: true, rationale: "Pinjam 1 dari 4: 3 <span class='frac'><span class='frac-num'>6</span><span class='frac-den'>5</span></span> - 2 <span class='frac'><span class='frac-num'>3</span><span class='frac-den'>5</span></span> = 1 <span class='frac'><span class='frac-num'>3</span><span class='frac-den'>5</span></span>." },
+                    { text: "2 <span class='frac'><span class='frac-num'>2</span><span class='frac-den'>5</span></span>", isCorrect: false, rationale: "Tidak melakukan peminjaman dari bilangan bulat." },
+                    { text: "1 <span class='frac'><span class='frac-num'>2</span><span class='frac-den'>5</span></span>", isCorrect: false, rationale: "Selisih pembilang salah." },
+                    { text: "2 <span class='frac'><span class='frac-num'>4</span><span class='frac-den'>5</span></span>", isCorrect: false, rationale: "Pengurangan keliru." }
+                ]
+            },
+            {
+                id: 22,
+                category: "Pecahan Campuran",
+                question: "Berapa hasil dari 1<span class='frac'><span class='frac-num'>3</span><span class='frac-den'>4</span></span> × 2<span class='frac'><span class='frac-num'>2</span><span class='frac-den'>5</span></span> =",
+                options: [
+                    { text: "4 <span class='frac'><span class='frac-num'>1</span><span class='frac-den'>5</span></span>", isCorrect: true, rationale: "<span class='frac'><span class='frac-num'>7</span><span class='frac-den'>4</span></span> × <span class='frac'><span class='frac-num'>12</span><span class='frac-den'>5</span></span> = <span class='frac'><span class='frac-num'>84</span><span class='frac-den'>20</span></span> = <span class='frac'><span class='frac-num'>21</span><span class='frac-den'>5</span></span> = 4 <span class='frac'><span class='frac-num'>1</span><span class='frac-den'>5</span></span>." },
+                    { text: "2 <span class='frac'><span class='frac-num'>6</span><span class='frac-den'>20</span></span>", isCorrect: false, rationale: "Perkalian bulat dan pecahan terpisah (salah)." },
+                    { text: "3 <span class='frac'><span class='frac-num'>5</span><span class='frac-den'>9</span></span>", isCorrect: false, rationale: "Metode perkalian salah." },
+                    { text: "5 <span class='frac'><span class='frac-num'>1</span><span class='frac-den'>2</span></span>", isCorrect: false, rationale: "Hasil terlalu besar." }
+                ]
+            },
+            {
+                id: 23,
+                category: "Pecahan Campuran",
+                question: "Hitunglah pembagian 3<span class='frac'><span class='frac-num'>1</span><span class='frac-den'>3</span></span> ÷ 1<span class='frac'><span class='frac-num'>1</span><span class='frac-den'>6</span></span> =",
+                options: [
+                    { text: "2 <span class='frac'><span class='frac-num'>6</span><span class='frac-den'>7</span></span>", isCorrect: true, rationale: "<span class='frac'><span class='frac-num'>10</span><span class='frac-den'>3</span></span> ÷ <span class='frac'><span class='frac-num'>7</span><span class='frac-den'>6</span></span> = <span class='frac'><span class='frac-num'>10</span><span class='frac-den'>3</span></span> × <span class='frac'><span class='frac-num'>6</span><span class='frac-den'>7</span></span> = <span class='frac'><span class='frac-num'>60</span><span class='frac-den'>21</span></span> = 2 <span class='frac'><span class='frac-num'>6</span><span class='frac-den'>7</span></span>." },
+                    { text: "2 <span class='frac'><span class='frac-num'>1</span><span class='frac-den'>3</span></span>", isCorrect: false, rationale: "Pembagian bilangan bulat saja." },
+                    { text: "3 <span class='frac'><span class='frac-num'>1</span><span class='frac-den'>2</span></span>", isCorrect: false, rationale: "Perhitungan salah." },
+                    { text: "<span class='frac'><span class='frac-num'>70</span><span class='frac-den'>18</span></span>", isCorrect: false, rationale: "Belum disederhanakan." }
+                ]
+            },
+            {
+                id: 24,
+                category: "Pecahan Campuran",
+                question: "Berapakah hasil dari 5 - 2<span class='frac'><span class='frac-num'>3</span><span class='frac-den'>8</span></span> =",
+                options: [
+                    { text: "2 <span class='frac'><span class='frac-num'>5</span><span class='frac-den'>8</span></span>", isCorrect: true, rationale: "Ubah 5 menjadi 4 <span class='frac'><span class='frac-num'>8</span><span class='frac-den'>8</span></span>. Kurangi dengan 2 <span class='frac'><span class='frac-num'>3</span><span class='frac-den'>8</span></span> menghasilkan 2 <span class='frac'><span class='frac-num'>5</span><span class='frac-den'>8</span></span>." },
+                    { text: "3 <span class='frac'><span class='frac-num'>3</span><span class='frac-den'>8</span></span>", isCorrect: false, rationale: "Hanya mengurangkan bilangan bulat." },
+                    { text: "2 <span class='frac'><span class='frac-num'>3</span><span class='frac-den'>8</span></span>", isCorrect: false, rationale: "Kurang tepat dalam meminjam nilai 1." },
+                    { text: "<span class='frac'><span class='frac-num'>21</span><span class='frac-den'>8</span></span>", isCorrect: false, rationale: "Bentuk pecahan biasa yang kurang tepat posisinya." }
+                ]
+            },
+            {
+                id: 25,
+                category: "Pecahan Campuran",
+                question: "Hitunglah 1<span class='frac'><span class='frac-num'>1</span><span class='frac-den'>4</span></span> + 2<span class='frac'><span class='frac-num'>1</span><span class='frac-den'>2</span></span> + <span class='frac'><span class='frac-num'>3</span><span class='frac-den'>4</span></span> =",
+                options: [
+                    { text: "4 <span class='frac'><span class='frac-num'>1</span><span class='frac-den'>2</span></span>", isCorrect: true, rationale: "Bulat: 1+2=3. Pecahan: <span class='frac'><span class='frac-num'>1</span><span class='frac-den'>4</span></span> + <span class='frac'><span class='frac-num'>2</span><span class='frac-den'>4</span></span> + <span class='frac'><span class='frac-num'>3</span><span class='frac-den'>4</span></span> = <span class='frac'><span class='frac-num'>6</span><span class='frac-den'>4</span></span> (1 <span class='frac'><span class='frac-num'>1</span><span class='frac-den'>2</span></span>). Total: 3 + 1 <span class='frac'><span class='frac-num'>1</span><span class='frac-den'>2</span></span> = 4 <span class='frac'><span class='frac-num'>1</span><span class='frac-den'>2</span></span>." },
+                    { text: "3 <span class='frac'><span class='frac-num'>6</span><span class='frac-den'>10</span></span>", isCorrect: false, rationale: "Penyebut dijumlahkan." },
+                    { text: "5 <span class='frac'><span class='frac-num'>1</span><span class='frac-den'>4</span></span>", isCorrect: false, rationale: "Perhitungan salah." },
+                    { text: "4 <span class='frac'><span class='frac-num'>3</span><span class='frac-den'>4</span></span>", isCorrect: false, rationale: "Kurang tepat dalam menjumlahkan pecahan." }
+                ]
+            },
+            // Soal Tambahan Campuran & Aplikasi (26-30)
+            {
+                id: 26,
+                category: "Campuran & Aplikasi",
+                question: "Ibu memiliki 3<span class='frac'><span class='frac-num'>1</span><span class='frac-den'>2</span></span> kg tepung. Digunakan untuk membuat kue sebanyak 1<span class='frac'><span class='frac-num'>3</span><span class='frac-den'>4</span></span> kg. Sisa tepung ibu adalah...",
+                options: [
+                    { text: "1 <span class='frac'><span class='frac-num'>3</span><span class='frac-den'>4</span></span> kg", isCorrect: true, rationale: "3 <span class='frac'><span class='frac-num'>2</span><span class='frac-den'>4</span></span> - 1 <span class='frac'><span class='frac-num'>3</span><span class='frac-den'>4</span></span> = 2 <span class='frac'><span class='frac-num'>6</span><span class='frac-den'>4</span></span> - 1 <span class='frac'><span class='frac-num'>3</span><span class='frac-den'>4</span></span> = 1 <span class='frac'><span class='frac-num'>3</span><span class='frac-den'>4</span></span> kg." },
+                    { text: "2 <span class='frac'><span class='frac-num'>1</span><span class='frac-den'>4</span></span> kg", isCorrect: false, rationale: "Kesalahan dalam pengurangan." },
+                    { text: "1 <span class='frac'><span class='frac-num'>1</span><span class='frac-den'>2</span></span> kg", isCorrect: false, rationale: "Perhitungan selisih salah." },
+                    { text: "2 <span class='frac'><span class='frac-num'>3</span><span class='frac-den'>4</span></span> kg", isCorrect: false, rationale: "Terlalu besar untuk sisa." }
+                ]
+            },
+            {
+                id: 27,
+                category: "Campuran & Aplikasi",
+                question: "Sebuah pita panjangnya 4 meter. Setiap potongan panjangnya <span class='frac'><span class='frac-num'>1</span><span class='frac-den'>2</span></span> meter. Berapa banyak potongan pita yang dihasilkan?",
+                options: [
+                    { text: "8 potongan", isCorrect: true, rationale: "4 ÷ <span class='frac'><span class='frac-num'>1</span><span class='frac-den'>2</span></span> = 4 × 2 = 8 potongan." },
+                    { text: "2 potongan", isCorrect: false, rationale: "Ini adalah hasil pembagian terbalik." },
+                    { text: "6 potongan", isCorrect: false, rationale: "Perhitungan salah." },
+                    { text: "4 potongan", isCorrect: false, rationale: "Pita dibagi setengah meter, bukan 1 meter." }
+                ]
+            },
+            {
+                id: 28,
+                category: "Campuran & Aplikasi",
+                question: "Berapakah hasil dari (<span class='frac'><span class='frac-num'>3</span><span class='frac-den'>4</span></span> + <span class='frac'><span class='frac-num'>1</span><span class='frac-den'>2</span></span>) × <span class='frac'><span class='frac-num'>4</span><span class='frac-den'>5</span></span> =",
+                options: [
+                    { text: "1", isCorrect: true, rationale: "Jumlahkan dalam kurung dulu: <span class='frac'><span class='frac-num'>3</span><span class='frac-den'>4</span></span> + <span class='frac'><span class='frac-num'>2</span><span class='frac-den'>4</span></span> = <span class='frac'><span class='frac-num'>5</span><span class='frac-den'>4</span></span> (1 <span class='frac'><span class='frac-num'>1</span><span class='frac-den'>4</span></span>). Lalu <span class='frac'><span class='frac-num'>5</span><span class='frac-den'>4</span></span> × <span class='frac'><span class='frac-num'>4</span><span class='frac-den'>5</span></span> = 1." },
+                    { text: "<span class='frac'><span class='frac-num'>4</span><span class='frac-den'>5</span></span>", isCorrect: false, rationale: "Kurang menjumlahkan bagian dalam kurung." },
+                    { text: "2", isCorrect: false, rationale: "Terlalu besar." },
+                    { text: "<span class='frac'><span class='frac-num'>5</span><span class='frac-den'>4</span></span>", isCorrect: false, rationale: "Belum dikalikan dengan <span class='frac'><span class='frac-num'>4</span><span class='frac-den'>5</span></span>." }
+                ]
+            },
+            {
+                id: 29,
+                category: "Campuran & Aplikasi",
+                question: "Ayah memiliki sebidang tanah. <span class='frac'><span class='frac-num'>2</span><span class='frac-den'>5</span></span> bagian ditanami mangga, dan <span class='frac'><span class='frac-num'>1</span><span class='frac-den'>2</span></span> bagian ditanami jeruk. Berapa bagian tanah ayah yang sudah ditanami?",
+                options: [
+                    { text: "<span class='frac'><span class='frac-num'>9</span><span class='frac-den'>10</span></span> bagian", isCorrect: true, rationale: "Samakan penyebut ke 10: <span class='frac'><span class='frac-num'>4</span><span class='frac-den'>10</span></span> + <span class='frac'><span class='frac-num'>5</span><span class='frac-den'>10</span></span> = <span class='frac'><span class='frac-num'>9</span><span class='frac-den'>10</span></span> bagian." },
+                    { text: "<span class='frac'><span class='frac-num'>3</span><span class='frac-den'>7</span></span> bagian", isCorrect: false, rationale: "Penyebut dijumlahkan." },
+                    { text: "<span class='frac'><span class='frac-num'>3</span><span class='frac-den'>10</span></span> bagian", isCorrect: false, rationale: "Ini hasil pengurangan, bukan penjumlahan." },
+                    { text: "1 bagian penuh", isCorrect: false, rationale: "Belum mencapai satu bagian penuh." }
+                ]
+            },
+            {
+                id: 30,
+                category: "Campuran & Aplikasi",
+                question: "Hasil dari 2<span class='frac'><span class='frac-num'>1</span><span class='frac-den'>4</span></span> × <span class='frac'><span class='frac-num'>4</span><span class='frac-den'>9</span></span> ÷ <span class='frac'><span class='frac-num'>1</span><span class='frac-den'>3</span></span> =",
+                options: [
+                    { text: "3", isCorrect: true, rationale: "Ubah ke pecahan biasa: <span class='frac'><span class='frac-num'>9</span><span class='frac-den'>4</span></span> × <span class='frac'><span class='frac-num'>4</span><span class='frac-den'>9</span></span> = 1. Lalu 1 ÷ <span class='frac'><span class='frac-num'>1</span><span class='frac-den'>3</span></span> = 1 × 3 = 3." },
+                    { text: "1", isCorrect: false, rationale: "Terhenti pada perkalian saja tanpa pembagian akhir." },
+                    { text: "<span class='frac'><span class='frac-num'>4</span><span class='frac-den'>3</span></span>", isCorrect: false, rationale: "Perhitungan salah." },
+                    { text: "4", isCorrect: false, rationale: "Estimasi keliru." }
+                ]
+            }
+        ];
+
+        // State Management with LocalStorage
+        let currentIdx = 0;
+        let userAnswers = JSON.parse(localStorage.getItem('fraction_quiz_answers')) || {};
+        let shuffledOptionsCache = JSON.parse(localStorage.getItem('fraction_quiz_shuffles')) || {};
+
+        function getShuffledOptions(q) {
+            if (shuffledOptionsCache[q.id]) {
+                return shuffledOptionsCache[q.id];
+            }
+            let ops = q.options.map((opt, idx) => ({ ...opt, origIndex: idx }));
+            for (let i = ops.length - 1; i > 0; i--) {
+                let j = (q.id * 17 + i * 31) % (i + 1);
+                [ops[i], ops[j]] = [ops[j], ops[i]];
+            }
+            shuffledOptionsCache[q.id] = ops;
+            localStorage.setItem('fraction_quiz_shuffles', JSON.stringify(shuffledOptionsCache));
+            return ops;
+        }
+
+        function initQuiz() {
+            renderPalette();
+            loadQuestion(currentIdx);
+            updateScoreDisplay();
+        }
+
+        function loadQuestion(idx) {
+            currentIdx = idx;
+            const q = quizData[idx];
+            
+            document.getElementById('question-badge').innerText = `Soal ${idx + 1} dari 30`;
+            document.getElementById('category-badge').innerText = q.category;
+            document.getElementById('question-text').innerHTML = q.question;
+
+            const optionsContainer = document.getElementById('options-container');
+            optionsContainer.innerHTML = '';
+
+            const ops = getShuffledOptions(q);
+            const savedAns = userAnswers[q.id];
+
+            ops.forEach((opt, localIdx) => {
+                const btn = document.createElement('button');
+                btn.className = "w-full text-left p-4 rounded-2xl border border-slate-200 bg-white hover:border-emerald-500 hover:bg-emerald-50/50 font-medium transition flex items-center justify-between text-sm md:text-base";
+                
+                let letter = String.fromCharCode(65 + localIdx); // A, B, C, D
+                btn.innerHTML = `<span class="font-bold mr-3 text-emerald-700">${letter}.</span> <span class="flex-1">${opt.text}</span>`;
+
+                if (savedAns !== undefined) {
+                    btn.disabled = true;
+                    if (opt.origIndex === savedAns.selectedOptIndex) {
+                        if (opt.isCorrect) {
+                            btn.className = "w-full text-left p-4 rounded-2xl border-2 border-emerald-500 bg-emerald-50 font-medium flex items-center justify-between text-sm md:text-base text-emerald-900";
+                        } else {
+                            btn.className = "w-full text-left p-4 rounded-2xl border-2 border-rose-500 bg-rose-50 font-medium flex items-center justify-between text-sm md:text-base text-rose-900";
+                        }
+                    } else if (opt.isCorrect) {
+                        btn.className = "w-full text-left p-4 rounded-2xl border-2 border-emerald-500 bg-emerald-50 font-medium flex items-center justify-between text-sm md:text-base text-emerald-900";
+                    }
+                } else {
+                    btn.onclick = () => selectOption(q.id, opt.origIndex, localIdx);
+                }
+
+                optionsContainer.appendChild(btn);
+            });
+
+            const expBox = document.getElementById('explanation-box');
+            if (savedAns !== undefined) {
+                expBox.classList.remove('hidden');
+                document.getElementById('explanation-title').innerText = savedAns.isCorrect ? "🎉 Benar!" : "❌ Kurang Tepat!";
+                document.getElementById('explanation-title').className = savedAns.isCorrect ? "font-bold mb-1 text-emerald-700" : "font-bold mb-1 text-rose-700";
+                const correctOpt = q.options.find(o => o.isCorrect);
+                document.getElementById('explanation-text').innerHTML = correctOpt.rationale;
+            } else {
+                expBox.classList.add('hidden');
+            }
+
+            document.getElementById('btn-prev').disabled = idx === 0;
+            document.getElementById('btn-next').innerText = idx === quizData.length - 1 ? "Selesai 🏆" : "Selanjutnya →";
+
+            renderPalette();
+        }
+
+        function selectOption(qId, origIdx, localIdx) {
+            const q = quizData.find(item => item.id === qId);
+            const chosenOpt = q.options.find((o, idx) => idx === origIdx);
+            const isCorrect = chosenOpt.isCorrect;
+
+            userAnswers[qId] = {
+                selectedOptIndex: origIdx,
+                isCorrect: isCorrect
+            };
+
+            localStorage.setItem('fraction_quiz_answers', JSON.stringify(userAnswers));
+            
+            loadQuestion(currentIdx);
+            updateScoreDisplay();
+        }
+
+        function nextQuestion() {
+            if (currentIdx < quizData.length - 1) {
+                loadQuestion(currentIdx + 1);
+            } else {
+                alert("Selamat! Anda telah menyelesaikan seluruh 30 soal kuis pecahan.");
+            }
+        }
+
+        function prevQuestion() {
+            if (currentIdx > 0) {
+                loadQuestion(currentIdx - 1);
+            }
+        }
+
+        function jumpToQuestion(idx) {
+            loadQuestion(idx);
+        }
+
+        function renderPalette() {
+            const paletteGrid = document.getElementById('palette-grid');
+            paletteGrid.innerHTML = '';
+
+            let answeredCount = 0;
+
+            quizData.forEach((q, idx) => {
+                const btn = document.createElement('button');
+                btn.className = "h-9 rounded-xl font-bold text-xs transition flex items-center justify-center border ";
+                
+                const ans = userAnswers[q.id];
+                if (ans !== undefined) {
+                    answeredCount++;
+                    if (ans.isCorrect) {
+                        btn.className += "bg-emerald-500 text-white border-emerald-600 shadow-sm";
+                    } else {
+                        btn.className += "bg-rose-500 text-white border-rose-600 shadow-sm";
+                    }
+                } else {
+                    btn.className += "bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200";
+                }
+
+                if (idx === currentIdx) {
+                    btn.className += " ring-2 ring-emerald-600 ring-offset-2";
+                }
+
+                btn.innerText = idx + 1;
+                btn.onclick = () => jumpToQuestion(idx);
+                paletteGrid.appendChild(btn);
+            });
+
+            document.getElementById('answered-count').innerText = `${answeredCount}/30 Terisi`;
+        }
+
+        function updateScoreDisplay() {
+            let score = 0;
+            Object.values(userAnswers).forEach(ans => {
+                if (ans.isCorrect) score++;
+            });
+            document.getElementById('score-display').innerText = score;
+        }
+
+        function resetQuiz() {
+            if (confirm("Apakah Anda yakin ingin mereset seluruh progres kuis?")) {
+                localStorage.removeItem('fraction_quiz_answers');
+                localStorage.removeItem('fraction_quiz_shuffles');
+                userAnswers = {};
+                shuffledOptionsCache = {};
+                currentIdx = 0;
+                initQuiz();
+            }
+        }
+
+        window.onload = initQuiz;
+    </script>
+</body>
+</html>
